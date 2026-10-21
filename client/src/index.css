@@ -1,15 +1,27 @@
-@import "tailwindcss";
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#6B422F" />
 
-@theme {
-  --color-cream: #F8F6EF;
-  --color-beige: #E8DCC6;
-  --color-walnut: #6B422F;
-  --color-sage: #8A987A;
-  --color-terracotta: #B86F45;
-  --color-ink: #292821;
-}
+    <title>Ayat Furniture | Crafted for your home &amp; office</title>
+    <meta
+      name="description"
+      content="Ayat Furniture makes sofas and home and office furniture. Browse designs, choose custom sizes and fabrics, and enquire on WhatsApp for prices."
+    />
 
-body {
-  background-color: var(--color-cream);
-  color: var(--color-ink);
-}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Ayat Furniture" />
+    <meta property="og:title" content="Ayat Furniture | Crafted for your home &amp; office" />
+    <meta
+      property="og:description"
+      content="Sofas and furniture made for your space. Custom sizes and fabrics. Enquire on WhatsApp."
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
