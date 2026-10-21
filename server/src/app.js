@@ -10,9 +10,10 @@ import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
 
-// (Live server proxy ke peeche hota hai. Isse rate limit asli user ke IP pe lagta hai.)
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1)
+// (Live server proxy ke peeche hota hai. TRUST_PROXY = kitne proxy hop ke baad asli user ka IP milta hai.)
+const trustProxy = Number(process.env.TRUST_PROXY || 0)
+if (trustProxy > 0) {
+  app.set('trust proxy', trustProxy)
 }
 
 app.use(helmet())
