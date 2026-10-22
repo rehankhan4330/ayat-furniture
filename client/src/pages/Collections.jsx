@@ -20,7 +20,7 @@ function Collections() {
               to={`/collections/${c.slug}`}
               className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_24px_rgba(107,66,47,0.1)] transition hover:-translate-y-1"
             >
-              <ImageBox src={c.image} alt={c.name} className="h-48 w-full" />
+              <ImageBox src={c.image} alt={c.name} className="h-48 w-full" width={600} />
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-walnut">{c.name}</h2>
                 <p className="mt-1 text-sm text-ink/70">{c.tagline}</p>

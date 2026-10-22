@@ -230,7 +230,7 @@ function AdminCollections() {
                 <tr key={c._id}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <ImageBox src={c.bannerImage?.url} alt={c.name} className="h-10 w-14 rounded-lg" />
+                      <ImageBox src={c.bannerImage?.url} alt={c.name} className="h-10 w-14 rounded-lg" width={160} />
                       <div>
                         <p className="font-medium text-ink">{c.name}</p>
                         <p className="text-xs text-ink/50">/{c.slug}</p>

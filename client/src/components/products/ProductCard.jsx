@@ -16,6 +16,7 @@ function ProductCard({ product }) {
           src={image?.url}
           alt={image?.alt || product.name}
           className="aspect-[4/3] w-full"
+          width={500}
         />
       </Link>
       <div className="p-4">

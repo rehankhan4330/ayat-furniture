@@ -20,6 +20,7 @@ export function uploadBuffer(buffer, folder = `${IMAGE_FOLDER}/products`) {
         folder,
         resource_type: 'image',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'], // (Cloudinary asli file ka format khud check karta hai)
+        timeout: 120000, // (slow internet par 2 minute tak ruk sakta hai)
       },
       (error, result) => (error ? reject(error) : resolve(result)),
     )

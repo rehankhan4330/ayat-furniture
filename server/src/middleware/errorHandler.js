@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js'
+import { MAX_IMAGE_MB } from '../config/limits.js'
 
 export function notFound(req, res, next) {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`))
@@ -33,7 +34,7 @@ export function errorHandler(err, req, res, next) {
   // (Image upload ke errors)
   if (err.name === 'MulterError') {
     statusCode = 400
-    if (err.code === 'LIMIT_FILE_SIZE') message = 'Each image must be 5 MB or smaller'
+    if (err.code === 'LIMIT_FILE_SIZE') message = `Each image must be ${MAX_IMAGE_MB} MB or smaller`
     else if (err.code === 'LIMIT_FILE_COUNT') message = 'You can upload at most 8 images at a time'
     else message = 'Invalid upload. Please send images in the "images" field.'
   }

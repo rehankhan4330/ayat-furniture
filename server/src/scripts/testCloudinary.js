@@ -6,6 +6,27 @@ function describe(err) {
   return err?.error?.message || err?.message || JSON.stringify(err)
 }
 
+// (Ek chhoti 1x1 pixel ki image, sirf connection test karne ke liye.)
+const TINY_PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+
+async function uploadAndClean(cloudinary, source, label, sizeMb) {
+  const t = Date.now()
+  try {
+    const result = await cloudinary.uploader.upload(source, {
+      folder: 'ayat-furniture/test',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+      timeout: 180000,
+    })
+    const secs = (Date.now() - t) / 1000
+    const speed = sizeMb ? ` (about ${((sizeMb * 8) / secs).toFixed(2)} Mbps upload)` : ''
+    console.log(`PASS  ${label} worked in ${secs.toFixed(1)}s${speed}`)
+    await cloudinary.uploader.destroy(result.public_id)
+  } catch (err) {
+    console.log(`FAIL  ${label} failed after ${((Date.now() - t) / 1000).toFixed(1)}s ->`, describe(err))
+  }
+}
+
 async function main() {
   const name = process.env.CLOUDINARY_CLOUD_NAME || ''
   const key = process.env.CLOUDINARY_API_KEY || ''
@@ -15,9 +36,6 @@ async function main() {
   console.log('API key    :', key ? `${key.length} characters` : '(missing)')
   console.log('API secret :', secret ? `${secret.length} characters` : '(missing)')
 
-  const bad = [name, key, secret].some((v) => /\s/.test(v) || /["']/.test(v))
-  console.log('Spaces/quotes in values:', bad ? 'YES (remove them)' : 'no')
-
   if (!isCloudinaryConfigured()) {
     console.log('\nOne or more Cloudinary values are missing in server/.env')
     return
@@ -25,19 +43,22 @@ async function main() {
 
   const cloudinary = getCloudinary()
 
-  // 1. Keys sahi hain ya nahi
+  const t0 = Date.now()
   try {
     const res = await cloudinary.api.ping()
-    console.log('\nPASS  Credentials are valid (ping status:', res.status + ')')
+    console.log(`\nPASS  Credentials are valid (ping ${res.status}, ${((Date.now() - t0) / 1000).toFixed(1)}s)`)
   } catch (err) {
     console.log('\nFAIL  Credentials rejected ->', describe(err))
     return
   }
 
-  // 2. Asli image upload (photo ka path argument mein do)
+  // 1. Chhota upload (hamesha chalta hai)
+  await uploadAndClean(cloudinary, TINY_PNG, 'Tiny upload (1 pixel)', 0)
+
+  // 2. Asli photo (photo ka path argument mein do)
   const file = process.argv[2]
   if (!file) {
-    console.log('Tip: run with an image path to test a real upload:')
+    console.log('\nTip: to test a real photo, run:')
     console.log('     node src/scripts/testCloudinary.js "C:\\path\\to\\photo.jpg"')
     return
   }
@@ -46,17 +67,9 @@ async function main() {
     return
   }
 
-  try {
-    const result = await cloudinary.uploader.upload(file, {
-      folder: 'ayat-furniture/test',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    })
-    console.log('PASS  Upload worked ->', result.secure_url)
-    await cloudinary.uploader.destroy(result.public_id)
-    console.log('PASS  Test image deleted again')
-  } catch (err) {
-    console.log('FAIL  Upload failed ->', describe(err))
-  }
+  const sizeMb = fs.statSync(file).size / (1024 * 1024)
+  console.log(`\nUploading your photo (${sizeMb.toFixed(2)} MB) ...`)
+  await uploadAndClean(cloudinary, file, 'Your photo', sizeMb)
 }
 
 main().catch((err) => console.error('Script error:', err.message))

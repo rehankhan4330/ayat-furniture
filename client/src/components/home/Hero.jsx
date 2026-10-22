@@ -4,13 +4,25 @@ import { getWhatsAppLink } from '../../config/site'
 
 function Hero() {
   return (
-    <section
-      className="relative flex min-h-[90vh] items-center bg-gradient-to-br from-walnut via-terracotta to-sage bg-cover bg-center"
-      style={{
-        backgroundImage:
-          "linear-gradient(to right, rgba(41,40,33,0.75), rgba(41,40,33,0.25)), url('/images/hero.jpg')",
-      }}
-    >
+    <section className="relative isolate flex min-h-[90vh] items-center overflow-hidden bg-gradient-to-br from-walnut via-terracotta to-sage">
+      {/* (Asli <img> taaki browser isse sabse pehle load kare; phone ko chhoti 800px wali image milti hai) */}
+      <picture>
+        <source
+          type="image/webp"
+          srcSet="/images/hero-800.webp 800w, /images/hero-1600.webp 1600w"
+          sizes="100vw"
+        />
+        <img
+          src="/images/hero-1600.jpg"
+          srcSet="/images/hero-800.jpg 800w, /images/hero-1600.jpg 1600w"
+          sizes="100vw"
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+      </picture>
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink/75 to-ink/25" />
       <div className="mx-auto w-full max-w-6xl px-6 pb-24 pt-32">
         <h1 className="max-w-2xl text-4xl font-bold leading-tight text-white md:text-6xl">
           Modern Sofas and Furniture, Made for Your Home

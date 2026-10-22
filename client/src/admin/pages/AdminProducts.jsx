@@ -152,7 +152,7 @@ function AdminProducts() {
                 <tr key={p._id} className={p.isActive ? '' : 'bg-ink/5'}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <ImageBox src={p.images?.[0]?.url} alt={p.name} className="h-12 w-16 rounded-lg" />
+                      <ImageBox src={p.images?.[0]?.url} alt={p.name} className="h-12 w-16 rounded-lg" width={160} />
                       <div>
                         <p className="flex items-center gap-1 font-medium text-ink">
                           {p.name}

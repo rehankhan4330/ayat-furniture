@@ -3,14 +3,58 @@ import { ArrowLeft, ArrowRight, ImagePlus, Loader2, Star, Trash2 } from 'lucide-
 import { adminDeleteImage, adminUploadImages } from '../../services/api'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_MB = 5
+const MAX_PICK_MB = 20 // (tu itni badi file chun sakta hai)
+const KEEP_ORIGINAL_BYTES = 1.5 * 1024 * 1024 // (isse chhoti file bina chhede jati hai)
+const TARGET_BYTES = 3 * 1024 * 1024 // (badi file chhoti karke isse neeche laate hain)
+
+const toBlob = (canvas, type, quality) => new Promise((resolve) => canvas.toBlob(resolve, type, quality))
+
+// (Badi photo ko website ke liye kaafi badi (2400 px) par chhota karta hai. Chhoti photo seedha wapas.)
+async function prepareFile(file) {
+  if (file.size <= KEEP_ORIGINAL_BYTES) return file
+
+  let bitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  } catch {
+    throw new Error(`"${file.name}" could not be read. Please try a different photo.`)
+  }
+
+  // (JPEG ko JPEG hi rakhte hain. PNG/WebP mein transparency ho sakti hai, unke liye WebP.)
+  const isJpeg = file.type === 'image/jpeg'
+  const type = isJpeg ? 'image/jpeg' : 'image/webp'
+  const ext = isJpeg ? 'jpg' : 'webp'
+  const base = file.name.replace(/\.[^.]+$/, '')
+
+  try {
+    for (const maxSide of [2400, 1800]) {
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(bitmap.width * scale)
+      canvas.height = Math.round(bitmap.height * scale)
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+
+      for (const quality of [0.88, 0.8, 0.7]) {
+        const blob = await toBlob(canvas, type, quality)
+        if (blob && blob.type === type && blob.size <= TARGET_BYTES) {
+          return new File([blob], `${base}.${ext}`, { type })
+        }
+      }
+    }
+  } finally {
+    bitmap.close?.()
+  }
+  throw new Error(`"${file.name}" is too large even after resizing. Please use a smaller photo.`)
+}
 
 // images: [{ url, publicId, alt }]   onChange(newImagesArray)
 function ImageUploader({ images, onChange, max = 10, showAlt = true }) {
   const inputRef = useRef(null)
-  const [uploading, setUploading] = useState(false)
+  const [status, setStatus] = useState('') // (khaali = kuch nahi ho raha, warna button par dikhne wala text)
   const [error, setError] = useState('')
   const [fresh, setFresh] = useState([]) // (jo images is form mein abhi upload hui, abhi save nahi hui)
+
+  const busy = status !== ''
 
   const discardIfFresh = (img) => {
     if (img?.publicId && fresh.includes(img.publicId)) {
@@ -32,25 +76,47 @@ function ImageUploader({ images, onChange, max = 10, showAlt = true }) {
     }
     const wrongType = files.find((f) => !ALLOWED_TYPES.includes(f.type))
     if (wrongType) return setError(`"${wrongType.name}" is not allowed. Use JPG, PNG or WebP.`)
-    const tooBig = files.find((f) => f.size > MAX_MB * 1024 * 1024)
-    if (tooBig) return setError(`"${tooBig.name}" is larger than ${MAX_MB} MB.`)
+    const tooBig = files.find((f) => f.size > MAX_PICK_MB * 1024 * 1024)
+    if (tooBig) return setError(`"${tooBig.name}" is larger than ${MAX_PICK_MB} MB.`)
 
-    setUploading(true)
     try {
-      const uploaded = await adminUploadImages(files)
-      const added = uploaded.map((u) => ({ url: u.url, publicId: u.publicId, alt: '' }))
-      setFresh((prev) => [...prev, ...added.map((a) => a.publicId)])
+      // (Pehle sab chhoti karo, ek ek karke taaki browser ki memory na bhare.)
+      const prepared = []
+      for (let i = 0; i < files.length; i++) {
+        setStatus(files.length > 1 ? `Preparing ${i + 1} of ${files.length}...` : 'Preparing photo...')
+        prepared.push(await prepareFile(files[i]))
+      }
 
-      if (max === 1) {
-        discardIfFresh(images[0])
-        onChange(added)
-      } else {
-        onChange([...images, ...added])
+      // (Phir ek ek karke upload karo. Ek saath bhejne se slow internet par timeout aata hai.)
+      const added = []
+      let failure = ''
+      for (let i = 0; i < prepared.length; i++) {
+        setStatus(prepared.length > 1 ? `Uploading ${i + 1} of ${prepared.length}...` : 'Uploading...')
+        try {
+          const [u] = await adminUploadImages([prepared[i]])
+          added.push({ url: u.url, publicId: u.publicId, alt: '' })
+        } catch (err) {
+          failure = `"${files[i].name}" could not be uploaded: ${err.message}`
+          break
+        }
+      }
+
+      if (added.length > 0) {
+        setFresh((prev) => [...prev, ...added.map((a) => a.publicId)])
+        if (max === 1) {
+          discardIfFresh(images[0])
+          onChange(added)
+        } else {
+          onChange([...images, ...added])
+        }
+      }
+      if (failure) {
+        setError(added.length > 0 ? `${failure} The photos before it were added.` : failure)
       }
     } catch (err) {
       setError(err.message)
     } finally {
-      setUploading(false)
+      setStatus('')
     }
   }
 
@@ -149,12 +215,12 @@ function ImageUploader({ images, onChange, max = 10, showAlt = true }) {
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+            disabled={busy}
             className="mt-4 inline-flex items-center gap-2 rounded-full border border-dashed border-walnut/50 px-5 py-2 text-sm text-walnut transition hover:bg-beige/50 disabled:opacity-60"
           >
-            {uploading ? (
+            {busy ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Uploading...
+                <Loader2 size={16} className="animate-spin" /> {status}
               </>
             ) : (
               <>
@@ -165,7 +231,9 @@ function ImageUploader({ images, onChange, max = 10, showAlt = true }) {
         </>
       )}
 
-      <p className="mt-2 text-xs text-ink/50">JPG, PNG or WebP, up to {MAX_MB} MB each.</p>
+      <p className="mt-2 text-xs text-ink/50">
+        JPG, PNG or WebP, up to {MAX_PICK_MB} MB each. Large photos are resized automatically, so the quality stays sharp on the website.
+      </p>
       {error && (
         <p className="mt-2 text-sm text-red-600" role="alert">
           {error}

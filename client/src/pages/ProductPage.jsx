@@ -47,6 +47,8 @@ function ProductDetail({ product }) {
               src={activeImage?.url}
               alt={activeImage?.alt || product.name}
               className="aspect-[4/3] w-full rounded-3xl"
+              width={1000}
+              priority
             />
             {images.length > 1 && (
               <div className="mt-4 flex flex-wrap gap-3">
@@ -60,7 +62,7 @@ function ProductDetail({ product }) {
                       i === activeIndex ? 'border-walnut' : 'border-transparent'
                     }`}
                   >
-                    <ImageBox src={img.url} alt={img.alt || product.name} className="h-16 w-20" />
+                    <ImageBox src={img.url} alt={img.alt || product.name} className="h-16 w-20" width={160} />
                   </button>
                 ))}
               </div>

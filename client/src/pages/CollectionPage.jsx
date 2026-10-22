@@ -50,7 +50,7 @@ function CollectionPage() {
                 to={`/collections/${collectionSlug}/${c.slug}`}
                 className="rounded-2xl bg-white p-3 shadow-[0_6px_16px_rgba(107,66,47,0.1)] transition hover:-translate-y-1"
               >
-                <ImageBox src={c.image?.url} alt={c.name} className="h-28 w-full rounded-xl" />
+                <ImageBox src={c.image?.url} alt={c.name} className="h-28 w-full rounded-xl" width={400} />
                 <p className="mt-3 font-medium text-ink">{c.name}</p>
                 <p className="mt-1 text-xs text-ink/60">{c.description}</p>
               </Link>
